@@ -7,7 +7,7 @@ import type { Agent, Conversation, Lead, Message } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "conversations.read");
     const status = req.nextUrl.searchParams.get("status");
     const conversations = findMany<Conversation>(
       "conversations",
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "conversations.write");
     await assertConversationQuota(org.id);
     const body = (await req.json()) as { agentId?: string; channel?: string; name?: string; test?: boolean };
     const agent = body.agentId

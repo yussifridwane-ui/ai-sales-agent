@@ -11,6 +11,11 @@ export type User = {
   status: string;
   marketingConsent: boolean;
   lastLoginAt: string | null;
+  mfaEnabled: boolean;
+  mfaSecret: string | null;
+  failedLoginCount: number;
+  lockedUntil: string | null;
+  passwordChangedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,6 +27,7 @@ export type Session = {
   expiresAt: string;
   ip: string | null;
   userAgent: string | null;
+  mfaVerifiedAt: string | null;
   createdAt: string;
 };
 

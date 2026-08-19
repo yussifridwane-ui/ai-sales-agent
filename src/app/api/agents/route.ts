@@ -8,7 +8,7 @@ import { AppError } from "@/lib/errors";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "agents.read");
     return jsonOk({ agents: findMany<Agent>("agents", { organizationId: org.id }, { orderBy: "createdAt DESC" }) });
   } catch (e) {
     return jsonError(e);
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org, user } = await requireAuthOrg(req);
+    const { org, user } = await requireAuthOrg(req, "agents.write");
     await assertAgentQuota(org.id);
     const body = (await req.json()) as Partial<Agent>;
     if (!body.name) throw new AppError("invalid_input", "Nom requis.");
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { org, user } = await requireAuthOrg(req);
+    const { org, user } = await requireAuthOrg(req, "agents.write");
     const body = (await req.json()) as Partial<Agent> & { id: string };
     const agent = findOne<Agent>("agents", { id: body.id, organizationId: org.id });
     if (!agent) throw new AppError("not_found", "Agent introuvable.", 404);

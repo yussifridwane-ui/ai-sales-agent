@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { claimWebhook } from "@/lib/webhooks";
+import { assertFreshTimestamp, claimWebhook, rejectWebhook, verifyHmacSha256 } from "@/lib/webhooks";
 import { markPaymentPaid } from "@/lib/payments/provider";
 import { log } from "@/lib/logger";
 
@@ -12,7 +12,19 @@ export async function POST(req: NextRequest) {
       message: "STRIPE_WEBHOOK_SECRET manquant. Configuration requise. Aucun paiement réel traité.",
     });
   }
-  let event: { id?: string; type?: string; data?: { object?: { id?: string; client_reference_id?: string } } };
+  const sig = req.headers.get("stripe-signature") || "";
+  const ts = /t=(\d+)/.exec(sig)?.[1];
+  const v1 = /v1=([a-f0-9]+)/.exec(sig)?.[1];
+  if (!ts || !v1 || !assertFreshTimestamp(ts)) {
+    rejectWebhook("timestamp/signature manquants", "stripe");
+    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+  }
+  const signed = `${ts}.${raw}`;
+  if (!verifyHmacSha256(signed, process.env.STRIPE_WEBHOOK_SECRET, v1)) {
+    rejectWebhook("bad signature", "stripe");
+    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+  }
+  let event: { id?: string; type?: string; data?: { object?: { id?: string } } };
   try {
     event = JSON.parse(raw);
   } catch {

@@ -8,7 +8,7 @@ import { AppError } from "@/lib/errors";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "products.read");
     const q = req.nextUrl.searchParams.get("q")?.toLowerCase();
     let products = findMany<Product>("products", { organizationId: org.id }, { orderBy: "createdAt DESC" });
     if (q) {
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org, user } = await requireAuthOrg(req);
+    const { org, user } = await requireAuthOrg(req, "products.write");
     await assertProductQuota(org.id);
     const body = (await req.json()) as Partial<Product>;
     if (!body.name || body.price == null) throw new AppError("invalid_input", "Nom et prix requis.");
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "products.write");
     const body = (await req.json()) as Partial<Product> & { id: string };
     const product = findOne<Product>("products", { id: body.id, organizationId: org.id });
     if (!product) throw new AppError("not_found", "Produit introuvable.", 404);
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { org, user } = await requireAuthOrg(req);
+    const { org, user } = await requireAuthOrg(req, "products.write");
     const id = req.nextUrl.searchParams.get("id");
     if (!id) throw new AppError("invalid_input", "id requis.");
     const product = findOne<Product>("products", { id, organizationId: org.id });

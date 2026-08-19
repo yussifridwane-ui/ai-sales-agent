@@ -10,7 +10,7 @@ function rangeStart(range: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "analytics.read");
     const range = req.nextUrl.searchParams.get("range") || "30";
     const start = req.nextUrl.searchParams.get("from") || rangeStart(range);
     const orgId = org.id;

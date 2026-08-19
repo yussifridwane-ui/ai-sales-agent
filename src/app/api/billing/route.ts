@@ -9,7 +9,7 @@ import type { Invoice, Plan } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "billing.read");
     const usage = await getPeriodUsage(org.id);
     const invoices = findMany<Invoice>("invoices", { organizationId: org.id }, { orderBy: "createdAt DESC" });
     return jsonOk({
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org, user } = await requireAuthOrg(req);
+    const { org, user } = await requireAuthOrg(req, "billing.write");
     const body = (await req.json()) as { plan?: string; action?: "upgrade" | "downgrade" | "cancel" | "resume" };
     if (body.action === "cancel" && org.subscription) {
       updateWhere("subscriptions", { organizationId: org.id }, { cancelAtPeriodEnd: true });

@@ -17,6 +17,7 @@ const nav = [
   { href: "/app/insights", label: "Insights" },
   { href: "/app/integrations", label: "Integrations" },
   { href: "/app/billing", label: "Billing" },
+  { href: "/app/team", label: "Team" },
   { href: "/app/settings", label: "Settings" },
 ];
 

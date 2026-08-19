@@ -6,7 +6,7 @@ import type { Lead } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "leads.read");
     const status = req.nextUrl.searchParams.get("status");
     const leads = findMany<Lead>(
       "leads",
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "leads.write");
     const body = (await req.json()) as Partial<Lead>;
     const id = insert("leads", {
       organizationId: org.id,
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "leads.write");
     const body = (await req.json()) as Partial<Lead> & { id: string };
     const lead = findOne<Lead>("leads", { id: body.id, organizationId: org.id });
     if (!lead) throw new AppError("not_found", "Prospect introuvable.", 404);

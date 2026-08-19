@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
+import { assertIdent, assertTable, sanitizeOrderBy } from "../security/identifiers";
 
 const DB_PATH = process.env.SQLITE_PATH || path.join(process.cwd(), "data", "aisales.db");
 
@@ -12,7 +13,26 @@ function ensureDb() {
   database.exec("PRAGMA journal_mode = WAL;");
   const schemaPath = path.join(process.cwd(), "src/lib/db/schema.sql");
   database.exec(fs.readFileSync(schemaPath, "utf8"));
+  migrate(database);
   return database;
+}
+
+function migrate(database: DatabaseSync) {
+  const add = (table: string, column: string, def: string) => {
+    const cols = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === column)) {
+      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+    }
+  };
+  add("users", "mfaEnabled", "INTEGER NOT NULL DEFAULT 0");
+  add("users", "mfaSecret", "TEXT");
+  add("users", "failedLoginCount", "INTEGER NOT NULL DEFAULT 0");
+  add("users", "lockedUntil", "TEXT");
+  add("users", "passwordChangedAt", "TEXT");
+  add("sessions", "mfaVerifiedAt", "TEXT");
+  add("audit_logs", "requestId", "TEXT");
+  add("audit_logs", "result", "TEXT");
+  add("webhook_events", "receivedAt", "TEXT");
 }
 
 const globalForDb = globalThis as unknown as { __aisDb?: DatabaseSync };
@@ -68,6 +88,9 @@ const BOOL_FIELDS = new Set([
   "generatedByAi",
   "attributedToAi",
   "enabled",
+  "mfaEnabled",
+  "restoreTested",
+  "success",
 ]);
 
 export function hydrate<T>(record: Record<string, unknown> | undefined | null): T | undefined {
@@ -85,7 +108,9 @@ export function hydrateAll<T>(list: Record<string, unknown>[]): T[] {
 }
 
 export function insert(table: string, data: Record<string, unknown>) {
+  assertTable(table);
   const payload: Record<string, unknown> = { ...data };
+  for (const k of Object.keys(payload)) assertIdent(k);
   if (!payload.id) payload.id = id();
   if (tableHasCreated(table) && !payload.createdAt) payload.createdAt = nowIso();
   if (tableHasUpdated(table) && !payload.updatedAt) payload.updatedAt = nowIso();
@@ -103,7 +128,10 @@ function tableHasCreated(table: string) {
 }
 
 export function updateWhere(table: string, where: Record<string, unknown>, data: Record<string, unknown>) {
+  assertTable(table);
   const payload: Record<string, unknown> = { ...data };
+  for (const k of Object.keys(payload)) assertIdent(k);
+  for (const k of Object.keys(where)) assertIdent(k);
   if ("updatedAt" in Object.keys(data) || tableHasUpdated(table)) payload.updatedAt = nowIso();
   for (const k of Object.keys(payload)) {
     if (BOOL_FIELDS.has(k)) payload[k] = fromBool(payload[k]);
@@ -138,11 +166,17 @@ function tableHasUpdated(table: string) {
     "commercial_rules",
     "widget_settings",
     "webhook_events",
+    "login_attempts",
+    "security_events",
+    "file_assets",
+    "backups",
   ].includes(table);
 }
 
 export function removeWhere(table: string, where: Record<string, unknown>) {
+  assertTable(table);
   const wheres = Object.keys(where);
+  for (const k of wheres) assertIdent(k);
   exec(
     `DELETE FROM ${table} WHERE ${wheres.map((k) => `${k}=?`).join(" AND ")}`,
     wheres.map((k) => where[k]),
@@ -162,8 +196,10 @@ export function findMany<T>(
   where: Record<string, unknown> = {},
   opts?: { orderBy?: string; limit?: number; offset?: number; extra?: string; extraParams?: unknown[] },
 ) {
+  assertTable(table);
   where = normalizeWhere(where);
   const keys = Object.keys(where);
+  for (const k of keys) assertIdent(k);
   let sql = `SELECT * FROM ${table}`;
   const params: unknown[] = [];
   if (keys.length) {
@@ -174,7 +210,8 @@ export function findMany<T>(
     sql += keys.length ? ` AND ${opts.extra}` : ` WHERE ${opts.extra}`;
     params.push(...(opts.extraParams || []));
   }
-  if (opts?.orderBy) sql += ` ORDER BY ${opts.orderBy}`;
+  const order = sanitizeOrderBy(opts?.orderBy);
+  if (order) sql += ` ORDER BY ${order}`;
   if (opts?.limit) sql += ` LIMIT ${Number(opts.limit)}`;
   if (opts?.offset) sql += ` OFFSET ${Number(opts.offset)}`;
   return hydrateAll<T>(rows(sql, params) as Record<string, unknown>[]);
@@ -185,7 +222,10 @@ export function findOne<T>(table: string, where: Record<string, unknown>) {
 }
 
 export function count(table: string, where: Record<string, unknown> = {}, extra?: string, extraParams: unknown[] = []) {
+  assertTable(table);
+  where = normalizeWhere(where);
   const keys = Object.keys(where);
+  for (const k of keys) assertIdent(k);
   let sql = `SELECT COUNT(*) as n FROM ${table}`;
   const params: unknown[] = [];
   if (keys.length) {
@@ -201,8 +241,11 @@ export function count(table: string, where: Record<string, unknown> = {}, extra?
 }
 
 export function sum(table: string, column: string, where: Record<string, unknown> = {}, extra?: string, extraParams: unknown[] = []) {
+  assertTable(table);
+  assertIdent(column);
   where = normalizeWhere(where);
   const keys = Object.keys(where);
+  for (const k of keys) assertIdent(k);
   let sql = `SELECT COALESCE(SUM(${column}),0) as n FROM ${table}`;
   const params: unknown[] = [];
   if (keys.length) {

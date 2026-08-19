@@ -8,7 +8,7 @@ import type { Conversation } from "@/lib/db/types";
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "conversations.write");
     const { id } = await ctx.params;
     const conversation = findOne<Conversation>("conversations", { id, organizationId: org.id });
     if (!conversation) throw new AppError("not_found", "Conversation introuvable.", 404);

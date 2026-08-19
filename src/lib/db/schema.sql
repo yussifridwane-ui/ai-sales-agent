@@ -549,3 +549,48 @@ CREATE INDEX IF NOT EXISTS idx_pay_org ON payments(organizationId);
 CREATE INDEX IF NOT EXISTS idx_analytics_org ON analytics_events(organizationId, createdAt);
 CREATE INDEX IF NOT EXISTS idx_usage_org ON usage_records(organizationId, createdAt);
 CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_logs(organizationId, createdAt);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id TEXT PRIMARY KEY,
+  email TEXT,
+  ip TEXT,
+  success INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS security_events (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  message TEXT NOT NULL,
+  organizationId TEXT,
+  userId TEXT,
+  ip TEXT,
+  meta TEXT NOT NULL DEFAULT '{}',
+  createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS file_assets (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL,
+  originalName TEXT NOT NULL,
+  storedName TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  createdAt TEXT NOT NULL,
+  FOREIGN KEY (organizationId) REFERENCES organizations(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS backups (
+  id TEXT PRIMARY KEY,
+  path TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  triggeredBy TEXT,
+  restoreTested INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip, createdAt);
+CREATE INDEX IF NOT EXISTS idx_security_events_created ON security_events(createdAt);
+CREATE INDEX IF NOT EXISTS idx_files_org ON file_assets(organizationId);

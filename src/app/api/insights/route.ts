@@ -5,7 +5,7 @@ import type { Conversation, Message, Product } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "analytics.read");
     const messages = findMany<Message>("messages", { organizationId: org.id }, { limit: 800, orderBy: "createdAt DESC" });
     const conversations = findMany<Conversation>("conversations", { organizationId: org.id });
     const products = findMany<Product>("products", { organizationId: org.id });

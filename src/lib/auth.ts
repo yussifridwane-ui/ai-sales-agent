@@ -5,14 +5,23 @@ import { hashPassword, randomToken, verifyPassword } from "./crypto";
 import { AppError } from "./errors";
 import { log } from "./logger";
 import { sendEmail } from "./email";
+import { assertNotLocked, findUserByEmail, onLoginFailure, onLoginSuccess } from "./security/brute-force";
+import { audit } from "./audit";
 
 export const SESSION_COOKIE = "ais_session";
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 14;
 
-export async function createSession(userId: string, ip?: string, userAgent?: string) {
+export async function createSession(userId: string, ip?: string, userAgent?: string, mfaVerified = false) {
   const token = randomToken(32);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  insert("sessions", { userId, token, expiresAt, ip: ip || null, userAgent: userAgent || null });
+  insert("sessions", {
+    userId,
+    token,
+    expiresAt,
+    ip: ip || null,
+    userAgent: userAgent || null,
+    mfaVerifiedAt: mfaVerified ? nowIso() : null,
+  });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -31,7 +40,18 @@ export async function destroySession() {
   jar.delete(SESSION_COOKIE);
 }
 
-export async function getSessionUser() {
+export async function destroyAllSessions(userId: string, keepToken?: string) {
+  if (keepToken) {
+    const sessions = (await import("./db")).findMany<Session>("sessions", { userId });
+    for (const s of sessions) {
+      if (s.token !== keepToken) removeWhere("sessions", { id: s.id });
+    }
+    return;
+  }
+  removeWhere("sessions", { userId });
+}
+
+export async function getSessionRecord() {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -40,6 +60,12 @@ export async function getSessionUser() {
     if (session) removeWhere("sessions", { id: session.id });
     return null;
   }
+  return session;
+}
+
+export async function getSessionUser() {
+  const session = await getSessionRecord();
+  if (!session) return null;
   const user = findOne<User>("users", { id: session.userId });
   if (!user || user.status !== "active") return null;
   return user;
@@ -63,7 +89,7 @@ export async function registerUser(input: {
     throw new AppError("invalid_input", "Email ou mot de passe invalide (8 caractères min.).");
   }
   if (findOne<User>("users", { email })) {
-    throw new AppError("email_taken", "Un compte existe déjà avec cet email.");
+    throw new AppError("email_taken", "Impossible de créer ce compte. Essayez de vous connecter.");
   }
   const userId = makeId("usr");
   insert("users", {
@@ -75,6 +101,8 @@ export async function registerUser(input: {
     locale: input.locale || "fr",
     platformRole: "user",
     status: "active",
+    failedLoginCount: 0,
+    mfaEnabled: false,
   });
   const token = randomToken(24);
   insert("email_verifications", {
@@ -96,16 +124,25 @@ export async function registerUser(input: {
 }
 
 export async function loginUser(email: string, password: string, ip?: string, ua?: string) {
-  const user = findOne<User>("users", { email: email.trim().toLowerCase() });
-  if (!user) throw new AppError("invalid_credentials", "Email ou mot de passe incorrect.", 401);
+  const normalized = email.trim().toLowerCase();
+  const user = findUserByEmail(normalized);
+  assertNotLocked(user, normalized, ip);
+  if (!user || user.status === "deleted") {
+    onLoginFailure(undefined, normalized, ip);
+    throw new AppError("invalid_credentials", "Email ou mot de passe incorrect.", 401);
+  }
   if (user.status === "suspended") {
     throw new AppError("suspended", "Ce compte a été suspendu. Contactez le support.", 403);
   }
   const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) throw new AppError("invalid_credentials", "Email ou mot de passe incorrect.", 401);
-  updateWhere("users", { id: user.id }, { lastLoginAt: nowIso() });
-  await createSession(user.id, ip, ua);
+  if (!ok) {
+    onLoginFailure(user, normalized, ip);
+    throw new AppError("invalid_credentials", "Email ou mot de passe incorrect.", 401);
+  }
+  onLoginSuccess(user, ip);
+  await createSession(user.id, ip, ua, false);
   log("SECURITY", "user_login", { userId: user.id });
+  await audit({ userId: user.id, action: "auth.login", ip, result: "ok" });
   return user;
 }
 
@@ -140,7 +177,7 @@ export async function requestPasswordReset(email: string) {
     html: `<p><a href="${url}">Réinitialiser mon mot de passe</a></p>`,
   });
   log("SECURITY", "password_reset_requested", { userId: user.id });
-  return token;
+  return process.env.NODE_ENV === "production" ? undefined : token;
 }
 
 export async function resetPassword(token: string, password: string) {
@@ -153,11 +190,21 @@ export async function resetPassword(token: string, password: string) {
     throw new AppError("invalid_token", "Lien de réinitialisation invalide ou expiré.");
   }
   updateWhere("password_resets", { id: rec.id }, { usedAt: nowIso() });
-  updateWhere("users", { id: rec.userId }, { passwordHash: await hashPassword(password) });
+  updateWhere("users", { id: rec.userId }, {
+    passwordHash: await hashPassword(password),
+    passwordChangedAt: nowIso(),
+    failedLoginCount: 0,
+    lockedUntil: null,
+  });
   removeWhere("sessions", { userId: rec.userId });
   log("SECURITY", "password_reset_completed", { userId: rec.userId });
+  await audit({ userId: rec.userId, action: "auth.password_reset", result: "ok" });
 }
 
 export function userExistsCount() {
   return count("users");
+}
+
+export async function markSessionMfa(token: string) {
+  updateWhere("sessions", { token }, { mfaVerifiedAt: nowIso() });
 }

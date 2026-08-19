@@ -6,7 +6,7 @@ import { AppError } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "products.write");
     const body = (await req.json()) as { rows?: { name: string; price: number; sku?: string; stock?: number; category?: string }[] };
     if (!body.rows?.length) throw new AppError("invalid_input", "Aucune ligne à importer.");
     let created = 0;

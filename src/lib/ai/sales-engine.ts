@@ -8,6 +8,8 @@ import { getAiProvider, type ChatTurn } from "./provider";
 import { extractContact, maybeCreateOrderFromIntent } from "./actions";
 import { runAutomations } from "../automations/engine";
 import type { Agent, Conversation, KnowledgeDocument, Lead, Message, Objection, Organization, Product } from "../db/types";
+import { detectPromptInjection, notePromptInjection, promptInjectionReply } from "../security/prompt-injection";
+import { looksLikeSecret, sanitizeText, stripSecrets } from "../security/sanitize";
 
 export async function processInboundMessage(input: {
   organizationId: string;
@@ -23,26 +25,55 @@ export async function processInboundMessage(input: {
 
   const org = findOne<Organization>("organizations", { id: input.organizationId });
   if (!org) throw new Error("org_not_found");
-  const agent = conversation.agentId ? findOne<Agent>("agents", { id: conversation.agentId }) : undefined;
-  const lead = conversation.leadId ? findOne<Lead>("leads", { id: conversation.leadId }) : undefined;
+  const agent = conversation.agentId
+    ? findOne<Agent>("agents", { id: conversation.agentId, organizationId: input.organizationId })
+    : undefined;
+  const lead = conversation.leadId
+    ? findOne<Lead>("leads", { id: conversation.leadId, organizationId: input.organizationId })
+    : undefined;
   const history = findMany<Message>("messages", { conversationId: conversation.id }, { orderBy: "createdAt ASC", limit: 24 });
-  const intent = detectIntent(input.content);
+  const content = sanitizeText(input.content, 4000);
+  if (looksLikeSecret(content)) {
+    return {
+      reply: "Je ne peux pas traiter de secrets ou de clés. Contactez un conseiller.",
+      intent: "human",
+      score: conversation.leadScore,
+      escalate: true,
+      model: "security-filter",
+    };
+  }
+  const intent = detectIntent(content);
 
   insert("messages", {
     organizationId: input.organizationId,
     conversationId: conversation.id,
     role: input.from === "human" ? "human" : "customer",
-    content: input.content,
+    content,
     generatedByAi: false,
     intent,
   });
 
-  if (/\b(stop|unsubscribe|désabon|ne plus)\b/i.test(input.content)) {
+  if (detectPromptInjection(content)) {
+    notePromptInjection({ organizationId: input.organizationId, conversationId: conversation.id });
+    const reply = promptInjectionReply(org.locale || agent?.language || "fr");
+    insert("messages", {
+      organizationId: input.organizationId,
+      conversationId: conversation.id,
+      role: "assistant",
+      content: reply,
+      generatedByAi: true,
+      intent: "human",
+      metadata: JSON.stringify({ blocked: "prompt_injection" }),
+    });
+    return { reply, intent: "human", score: conversation.leadScore, escalate: false, model: "security-filter" };
+  }
+
+  if (/\b(stop|unsubscribe|désabon|ne plus)\b/i.test(content)) {
     updateWhere("conversations", { id: conversation.id }, { optedOut: true });
     if (conversation.leadId) updateWhere("leads", { id: conversation.leadId }, { optedOut: true });
   }
 
-  const contact = extractContact(input.content);
+  const contact = extractContact(content);
   if (conversation.leadId && (contact.email || contact.phone || contact.name)) {
     updateWhere("leads", { id: conversation.leadId }, {
       email: contact.email || lead?.email || null,
@@ -62,9 +93,9 @@ export async function processInboundMessage(input: {
   const objections = findMany<Objection>("objections", { organizationId: input.organizationId });
 
   const mentionedProduct = products.some((p) =>
-    input.content.toLowerCase().includes((p.name.toLowerCase().split(" ")[0] || "___")),
+    content.toLowerCase().includes((p.name.toLowerCase().split(" ")[0] || "___")),
   );
-  const mentionedBudget = /\d+/.test(input.content) && /(€|\$|usd|eur|budget|franc)/i.test(input.content);
+  const mentionedBudget = /\d+/.test(content) && /(€|\$|usd|eur|budget|franc)/i.test(content);
   const nextScore = scoreLead({
     previous: conversation.leadScore,
     intent,
@@ -100,10 +131,10 @@ export async function processInboundMessage(input: {
           role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
           content: m.content,
         })),
-        { role: "user", content: input.content },
+        { role: "user", content },
       ];
       const result = await provider.complete(messages);
-      replyText = result.text;
+      replyText = stripSecrets(sanitizeText(result.text, 4000));
       model = result.model;
       tokensIn = result.tokensIn;
       tokensOut = result.tokensOut;
@@ -111,7 +142,7 @@ export async function processInboundMessage(input: {
     } catch (err) {
       log("AI", "fallback_demo_engine", { error: String(err) });
       const demo = demoReply({
-        text: input.content,
+        text: content,
         language: agent.language,
         tone: agent.tone,
         company: org.name,
@@ -129,7 +160,7 @@ export async function processInboundMessage(input: {
     }
   } else {
     const demo = demoReply({
-      text: input.content,
+      text: content,
       language: agent?.language || org.locale || "fr",
       tone: agent?.tone || "professional",
       company: org.name,

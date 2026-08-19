@@ -17,7 +17,7 @@ const CATALOG = [
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "integrations.read");
     const rows = findMany<Integration>("integrations", { organizationId: org.id });
     const items = CATALOG.map((c) => {
       const rec = rows.find((r) => r.provider === c.provider);

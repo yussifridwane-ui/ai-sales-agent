@@ -7,8 +7,14 @@ export async function audit(input: {
   entity?: string;
   entityId?: string;
   ip?: string;
+  requestId?: string;
+  result?: string;
   meta?: Record<string, unknown>;
 }) {
+  const meta = { ...(input.meta ?? {}) };
+  for (const k of Object.keys(meta)) {
+    if (/secret|password|token|key|authorization/i.test(k)) delete meta[k];
+  }
   insert("audit_logs", {
     organizationId: input.organizationId ?? null,
     userId: input.userId ?? null,
@@ -16,6 +22,8 @@ export async function audit(input: {
     entity: input.entity ?? null,
     entityId: input.entityId ?? null,
     ip: input.ip ?? null,
-    meta: JSON.stringify(input.meta ?? {}),
+    requestId: input.requestId ?? null,
+    result: input.result ?? "ok",
+    meta: JSON.stringify(meta),
   });
 }

@@ -104,9 +104,10 @@ export function getPaymentProvider(preferred?: string): PaymentProviderAdapter {
   return new DemoPaymentProvider();
 }
 
-export async function markPaymentPaid(externalId: string, provider: string) {
+export async function markPaymentPaid(externalId: string, provider: string, organizationId?: string) {
   const payment = findOne<Payment>("payments", { externalId, provider });
   if (!payment) return null;
+  if (organizationId && payment.organizationId !== organizationId) return null;
   if (payment.status === "paid") return payment;
   updateWhere("payments", { id: payment.id }, { status: "paid" });
   if (payment.orderId) {

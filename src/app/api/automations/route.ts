@@ -6,7 +6,7 @@ import type { AutomationRule } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "automations.read");
     const automationsEnabled = Boolean(org.subscription?.plan.automationsEnabled);
     return jsonOk({
       automationsEnabled,
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "automations.write");
     if (!org.subscription?.plan.automationsEnabled) {
       throw new AppError("plan_required", "Les automatisations nécessitent le plan Business ou Pro.", 402);
     }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "automations.write");
     const body = (await req.json()) as Partial<AutomationRule> & { id: string };
     const rule = findOne<AutomationRule>("automation_rules", { id: body.id, organizationId: org.id });
     if (!rule) throw new AppError("not_found", "Règle introuvable.", 404);

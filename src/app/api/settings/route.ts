@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "settings.write");
     const body = (await req.json()) as Partial<Organization> & { widget?: Partial<WidgetSettings>; rules?: Record<string, string> };
     const allowed = [
       "name",

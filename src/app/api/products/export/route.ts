@@ -5,7 +5,7 @@ import type { Product } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "products.read");
     const products = findMany<Product>("products", { organizationId: org.id });
     const header = ["id", "name", "sku", "price", "currency", "stock", "category", "status"];
     const csv = [

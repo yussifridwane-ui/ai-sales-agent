@@ -1,7 +1,8 @@
 import type { Product } from "../db/types";
-import { findMany, findOne, insert, nowIso } from "../db";
+import { findMany, findOne, insert } from "../db";
 import { runAutomations } from "../automations/engine";
 import type { Organization, Order } from "../db/types";
+import { computeOrderTotals, officialProduct } from "../security/pricing";
 
 export function extractContact(text: string) {
   const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
@@ -31,13 +32,28 @@ export async function maybeCreateOrderFromIntent(input: {
   )[0];
   if (existing) return existing;
 
-  const chosen =
-    input.products.filter((p) => input.productIds.includes(p.id))[0] ||
-    input.products.find((p) => p.status === "active" && !p.forbiddenForAi);
-  if (!chosen) return null;
+  const hinted = input.productIds[0];
+  let productId = hinted;
+  if (productId) {
+    try {
+      officialProduct(input.organizationId, productId);
+    } catch {
+      productId = "";
+    }
+  }
+  if (!productId) {
+    const fallback = input.products.find((p) => p.status === "active" && !p.forbiddenForAi);
+    productId = fallback?.id || "";
+  }
+  if (!productId) return null;
 
+  const totals = computeOrderTotals({
+    organizationId: input.organizationId,
+    items: [{ productId, quantity: 1 }],
+  });
   const org = findOne<Organization>("organizations", { id: input.organizationId });
   if (!org) return null;
+
   const orderId = insert("orders", {
     organizationId: input.organizationId,
     number: nextOrderNumber(),
@@ -46,40 +62,42 @@ export async function maybeCreateOrderFromIntent(input: {
     agentId: input.agentId ?? null,
     channel: input.channel,
     source: "ai_sales_agent",
-    subtotal: chosen.price,
-    discount: 0,
-    shipping: 0,
-    tax: 0,
-    total: chosen.price,
-    currency: chosen.currency || org.currency,
+    subtotal: totals.subtotal,
+    discount: totals.discount,
+    shipping: totals.shipping,
+    tax: totals.tax,
+    total: totals.total,
+    currency: totals.currency,
     status: "pending",
     paymentStatus: "unpaid",
     attributedToAi: true,
   });
-  insert("order_items", {
-    organizationId: input.organizationId,
-    orderId,
-    productId: chosen.id,
-    name: chosen.name,
-    quantity: 1,
-    unitPrice: chosen.price,
-    total: chosen.price,
-  });
+  for (const line of totals.lines) {
+    insert("order_items", {
+      organizationId: input.organizationId,
+      orderId,
+      productId: line.productId,
+      name: line.name,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      total: line.total,
+    });
+  }
   insert("analytics_events", {
     organizationId: input.organizationId,
     name: "order_created",
-    value: chosen.price,
+    value: totals.total,
     meta: JSON.stringify({ orderId, ai: true }),
   });
   insert("notifications", {
     organizationId: input.organizationId,
     type: "new_order",
     title: "Nouvelle commande",
-    body: `${orderId} · ${chosen.price} ${chosen.currency}`,
+    body: `${orderId} · ${totals.total} ${totals.currency}`,
     href: `/app/orders/${orderId}`,
   });
   await runAutomations(input.organizationId, "order_created", { orderId });
-  return findOne<Order>("orders", { id: orderId });
+  return findOne<Order>("orders", { id: orderId, organizationId: input.organizationId });
 }
 
 export async function createManualOrder(input: {
@@ -92,24 +110,13 @@ export async function createManualOrder(input: {
   tax?: number;
   notes?: string;
 }) {
-  const org = findOne<Organization>("organizations", { id: input.organizationId });
-  if (!org) throw new Error("org_not_found");
-  const products = findMany<Product>("products", { organizationId: input.organizationId });
-  const lines = input.items.map((i) => {
-    const p = products.find((x) => x.id === i.productId);
-    if (!p) throw new Error("product_not_found");
-    return {
-      productId: p.id,
-      name: p.name,
-      quantity: i.quantity,
-      unitPrice: p.price,
-      total: p.price * i.quantity,
-    };
+  const totals = computeOrderTotals({
+    organizationId: input.organizationId,
+    items: input.items,
+    requestedDiscount: input.discount,
+    shipping: input.shipping,
+    tax: input.tax,
   });
-  const subtotal = lines.reduce((s, l) => s + l.total, 0);
-  const discount = Math.max(0, input.discount ?? 0);
-  const shipping = Math.max(0, input.shipping ?? 0);
-  const tax = Math.max(0, input.tax ?? 0);
   const orderId = insert("orders", {
     organizationId: input.organizationId,
     number: nextOrderNumber(),
@@ -117,20 +124,27 @@ export async function createManualOrder(input: {
     conversationId: input.conversationId ?? null,
     channel: "manual",
     source: "dashboard",
-    subtotal,
-    discount,
-    shipping,
-    tax,
-    total: Math.max(0, subtotal - discount + shipping + tax),
-    currency: org.currency,
+    subtotal: totals.subtotal,
+    discount: totals.discount,
+    shipping: totals.shipping,
+    tax: totals.tax,
+    total: totals.total,
+    currency: totals.currency,
     notes: input.notes ?? null,
     attributedToAi: false,
     status: "pending",
     paymentStatus: "unpaid",
   });
-  for (const line of lines) {
-    insert("order_items", { organizationId: input.organizationId, orderId, ...line });
+  for (const line of totals.lines) {
+    insert("order_items", {
+      organizationId: input.organizationId,
+      orderId,
+      productId: line.productId,
+      name: line.name,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      total: line.total,
+    });
   }
-  void nowIso;
-  return findOne<Order>("orders", { id: orderId })!;
+  return findOne<Order>("orders", { id: orderId, organizationId: input.organizationId })!;
 }

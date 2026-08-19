@@ -6,7 +6,7 @@ import type { Lead, Order, OrderItem } from "@/lib/db/types";
 
 export async function GET(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "orders.read");
     const orders = findMany<Order>("orders", { organizationId: org.id }, { orderBy: "createdAt DESC", limit: 200 });
     const leads = findMany<Lead>("leads", { organizationId: org.id });
     const decorated = orders.map((o) => {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { org } = await requireAuthOrg(req);
+    const { org } = await requireAuthOrg(req, "orders.write");
     const body = (await req.json()) as {
       leadId?: string;
       items: { productId: string; quantity: number }[];
