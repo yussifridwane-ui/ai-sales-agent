@@ -72,9 +72,9 @@ export default function OnboardingPage() {
   return (
     <div className="grid-bg min-h-screen px-4 py-10">
       <div className="mx-auto max-w-xl">
-        <p className="text-sm text-teal-300">Créons votre commercial IA en 3 minutes.</p>
-        <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full bg-teal-400" style={{ width: `${(step / 8) * 100}%` }} />
+        <p className="text-sm text-[var(--ai)]">Créons votre commercial IA en 3 minutes.</p>
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--bg-soft)]">
+          <div className="h-full bg-[var(--primary)]" style={{ width: `${(step / 8) * 100}%` }} />
         </div>
         <div className="card mt-6 space-y-5 p-8">
           {step === 1 && (
@@ -116,7 +116,7 @@ export default function OnboardingPage() {
                     type="button"
                     key={i}
                     onClick={() => set("industry", i)}
-                    className={`rounded-xl border px-3 py-2 text-sm ${form.industry === i ? "border-teal-400 bg-teal-400/10" : "border-white/10"}`}
+                    className={`min-h-11 rounded-xl border px-3 py-2 text-sm ${form.industry === i ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]" : "border-[var(--line)]"}`}
                   >
                     {industryLabel[i]}
                   </button>
@@ -133,7 +133,7 @@ export default function OnboardingPage() {
                     type="button"
                     key={g}
                     onClick={() => set("salesGoal", g)}
-                    className={`block w-full rounded-xl border px-3 py-2 text-left text-sm ${form.salesGoal === g ? "border-teal-400 bg-teal-400/10" : "border-white/10"}`}
+                    className={`block min-h-11 w-full rounded-xl border px-3 py-2 text-left text-sm ${form.salesGoal === g ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]" : "border-[var(--line)]"}`}
                   >
                     {goalLabel[g]}
                   </button>
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
                     type="button"
                     key={t}
                     onClick={() => set("tone", t)}
-                    className={`rounded-xl border px-3 py-2 text-sm ${form.tone === t ? "border-teal-400 bg-teal-400/10" : "border-white/10"}`}
+                    className={`min-h-11 rounded-xl border px-3 py-2 text-sm ${form.tone === t ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]" : "border-[var(--line)]"}`}
                   >
                     {toneLabel[t]}
                   </button>
@@ -180,7 +180,7 @@ export default function OnboardingPage() {
                           on ? form.languages.filter((x) => x !== l.code) : [...form.languages, l.code],
                         )
                       }
-                      className={`rounded-xl border px-3 py-2 text-sm ${on ? "border-teal-400 bg-teal-400/10" : "border-white/10"}`}
+                      className={`min-h-11 rounded-xl border px-3 py-2 text-sm ${on ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]" : "border-[var(--line)]"}`}
                     >
                       {l.name}
                     </button>

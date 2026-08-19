@@ -1,236 +1,207 @@
 import Link from "next/link";
 import { MarketingFooter, MarketingNav } from "@/components/marketing-nav";
-
-const flow = ["Client", "Message", "AI Sales Agent", "Réponse intelligente", "Qualification", "Commande", "Paiement"];
-
-const channels = [
-  { name: "WhatsApp", status: "Connexion requise" },
-  { name: "Instagram", status: "Connexion requise" },
-  { name: "Website", status: "Disponible" },
-  { name: "Email", status: "Connexion requise" },
-  { name: "Messenger", status: "Coming soon" },
-];
-
-const features = [
-  ["Moteur commercial", "Conversation → qualification → recommandation → conversion, pas un simple chatbot."],
-  ["Catalogue & règles", "L'IA ne vend que ce que vous avez configuré. Aucun prix inventé."],
-  ["CRM & commandes", "Leads scorés, pipeline, commandes et attribution des ventes IA."],
-  ["Relances", "Séquences 2h / 24h / 72h avec opt-out automatique."],
-  ["Humain dans la boucle", "Prise de contrôle en un clic. L'IA s'arrête."],
-  ["Analytics", "AI Revenue, conversion, insights et coûts tokens."],
-];
+import { PLANS } from "@/lib/plans";
+import { Badge } from "@/components/ui";
 
 const faqs = [
-  ["Est-ce un chatbot générique ?", "Non. C'est un moteur commercial : qualification, objections, commande, paiement et suivi."],
-  ["Dois-je connecter WhatsApp tout de suite ?", "Non. Commencez par le widget site et le chat de test. WhatsApp nécessite les APIs officielles."],
-  ["L'IA peut-elle inventer une remise ?", "Non. La remise maximale est une règle serveur. Si l'info manque, l'agent dit qu'il va vérifier."],
-  ["Quels moyens de paiement ?", "Architecture modulaire : Stripe, PayPal, prestataires locaux. Rien n'est simulé comme réel."],
-  ["Mes données sont-elles isolées ?", "Oui. Multi-tenant strict par organization_id. L'entreprise A ne voit jamais l'entreprise B."],
+  ["Comment fonctionne AI Sales Agent ?", "Il suit un moteur commercial : accueil, qualification, recommandation catalogue, objections, commande, paiement, suivi. Ce n'est pas un chatbot FAQ."],
+  ["Quels canaux sont supportés ?", "Le widget site est disponible. WhatsApp et Instagram nécessitent une connexion officielle. Messenger : coming soon."],
+  ["Mes données sont-elles sécurisées ?", "Oui. Isolation multi-tenant, RBAC, secrets serveur, audit logs, export et suppression RGPD."],
+  ["Puis-je connecter WhatsApp ?", "Oui, via l'API officielle WhatsApp Cloud. Sans credentials : statut « Connexion requise »."],
+  ["Puis-je connecter Instagram ?", "Oui, via Meta. Les permissions nécessaires sont expliquées. Rien n'est simulé comme connecté."],
+  ["Comment fonctionne le paiement ?", "Prestataires officiels (Stripe, etc.). Le frontend ne peut pas marquer une commande payée."],
+  ["Puis-je désactiver l'IA ?", "Oui. Prenez le contrôle d'une conversation : l'IA se met en pause."],
+  ["Puis-je transférer une conversation à un humain ?", "Oui, automatiquement (plainte, secret, négociation hors règles) ou manuellement."],
 ];
 
 export default function HomePage() {
+  const displayPlans = PLANS.filter((p) => p.slug !== "free");
   return (
     <div className="grid-bg min-h-screen">
       <MarketingNav />
       <main>
-        <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 text-center md:pt-24">
-          <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-teal-200">
-            AI Sales Engine · International · Mobile-first
-          </div>
-          <h1 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight md:text-6xl">
-            Votre commercial IA
-            <span className="block bg-gradient-to-r from-teal-300 to-sky-300 bg-clip-text text-transparent">
-              travaille 24h/24.
-            </span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-400">
-            Transformez automatiquement vos conversations en prospects qualifiés et en ventes.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/register" className="btn btn-primary min-w-52">
-              Commencer gratuitement
-            </Link>
-            <a href="#how" className="btn btn-ghost min-w-52">
-              Voir comment ça marche
-            </a>
-          </div>
-          <p className="mt-4 text-xs text-slate-500">14 jours d&apos;essai · Carte non requise · Plan Free inclus</p>
-
-          <div className="mx-auto mt-14 max-w-5xl overflow-x-auto">
-            <div className="flex min-w-[720px] items-center justify-between gap-2">
-              {flow.map((step, i) => (
-                <div key={step} className="flex flex-1 items-center gap-2">
-                  <div className="card flex-1 px-3 py-4 text-sm font-medium">{step}</div>
-                  {i < flow.length - 1 ? <span className="text-teal-400">↓</span> : null}
-                </div>
-              ))}
+        <section id="produit" className="mx-auto max-w-6xl px-4 pb-12 pt-14 md:pt-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <div className="ai-chip mb-4">AI Sales Engine</div>
+              <h1>Transformez automatiquement vos conversations en ventes.</h1>
+              <p className="mt-4 max-w-xl text-lg text-[var(--muted)]">
+                AI Sales Agent répond à vos clients, recommande vos produits, qualifie les prospects et transforme les
+                conversations en commandes — 24h/24.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link href="/register" className="btn btn-primary">
+                  Commencer gratuitement
+                </Link>
+                <a href="#how" className="btn btn-ghost">
+                  Voir comment ça marche
+                </a>
+              </div>
+              <p className="mt-3 text-xs text-[var(--muted)]">Plan Free inclus · Carte non requise · Isolation multi-tenant</p>
             </div>
+            <DemoConversation />
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="card p-8">
-              <h2 className="text-2xl font-semibold">Le problème</h2>
-              <p className="mt-3 text-slate-400">
-                Les messages arrivent la nuit. Les prospects refroidissent. Les équipes répètent les mêmes réponses. Les
-                paniers sont abandonnés. Un chatbot FAQ ne vend pas.
-              </p>
-            </div>
-            <div className="card p-8">
-              <h2 className="text-2xl font-semibold">La solution</h2>
-              <p className="mt-3 text-slate-400">
-                Un agent commercial qui comprend l&apos;intention, qualifie, recommande depuis votre catalogue, traite les
-                objections selon vos règles, crée la commande et propose le paiement — puis transmet à un humain si
-                besoin.
-              </p>
-            </div>
+        <section className="mx-auto max-w-6xl px-4 py-10">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ["Disponibilité", "24h/24 — l'agent ne dort pas"],
+              ["Prix", "Toujours issus du catalogue"],
+              ["Sécurité", "Isolation entreprise + audit"],
+            ].map(([t, d]) => (
+              <div key={t} className="card p-5">
+                <div className="font-medium">{t}</div>
+                <p className="mt-1 text-sm text-[var(--muted)]">{d}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="features" className="mx-auto max-w-6xl px-4 py-16">
+          <h2>Conçu pour vendre, pas pour discuter.</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["AI Sales Agent", "Ton, langues, règles et escalade humaine."],
+              ["WhatsApp", "API officielle. Connexion requise."],
+              ["Instagram", "Meta. Permissions à accorder."],
+              ["Commandes", "Créées côté serveur, jamais au feeling."],
+              ["Catalogue intelligent", "Recommandations limitées à vos produits."],
+              ["Paiement", "Stripe ou DEMO explicite. Jamais simulé."],
+              ["Analytics", "AI Revenue à partir des commandes réelles."],
+              ["Automatisation", "Relances 2h / 24h / 72h avec opt-out."],
+            ].map(([t, d]) => (
+              <article key={t} className="card p-5 transition hover:-translate-y-0.5">
+                <div className="text-[var(--ai)]" aria-hidden>
+                  ◆
+                </div>
+                <h3 className="mt-3">{t}</h3>
+                <p className="mt-1 text-sm text-[var(--muted)]">{d}</p>
+              </article>
+            ))}
           </div>
         </section>
 
         <section id="how" className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">Fonctionnement</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <h2>Comment ça marche</h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
-              ["1. Configurez", "Entreprise, produits, ton, langues, règles de remise."],
-              ["2. Testez", "Jouez le client. Voyez pourquoi l'IA a répondu ainsi."],
-              ["3. Publiez", "Widget site immédiat. WhatsApp / Instagram après connexion officielle."],
-              ["4. Encaissez", "Commandes, paiements modulaires, suivi et AI Revenue."],
+              ["1. Connectez vos canaux", "Widget site immédiat. WhatsApp / Instagram après connexion officielle."],
+              ["2. Configurez votre agent IA", "Catalogue, ton, langues, remise max, escalade."],
+              ["3. Laissez-le vendre", "Qualification, commande, paiement, suivi — ou transfert humain."],
             ].map(([t, d]) => (
               <div key={t} className="card p-6">
-                <div className="text-teal-300">{t}</div>
-                <p className="mt-2 text-sm text-slate-400">{d}</p>
+                <div className="text-sm font-semibold text-[var(--primary)]">{t}</div>
+                <p className="mt-2 text-sm text-[var(--muted)]">{d}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">Fonctionnalités</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {features.map(([t, d]) => (
-              <div key={t} className="card p-6">
-                <h3 className="font-semibold">{t}</h3>
-                <p className="mt-2 text-sm text-slate-400">{d}</p>
-              </div>
-            ))}
+        <section id="demo" className="mx-auto max-w-6xl px-4 py-16">
+          <h2>Voyez votre agent vendre en temps réel</h2>
+          <p className="mt-2 text-[var(--muted)]">Démonstration visuelle. Aucun paiement réel n&apos;est déclenché.</p>
+          <div className="mt-6">
+            <DemoConversation extended />
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">Compatible avec vos canaux de vente</h2>
-          <p className="mt-2 text-slate-400">Aucune intégration n&apos;est présentée comme connectée sans configuration réelle.</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-5">
-            {channels.map((c) => (
-              <div key={c.name} className="card p-5 text-center">
-                <div className="font-medium">{c.name}</div>
-                <div className="mt-2 text-xs text-slate-400">{c.status}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <div className="grid gap-4 md:grid-cols-4">
-            {[
-              ["24/7", "Disponibilité"],
-              ["< 2 min", "Temps de réponse cible"],
-              ["+ conversion", "Réponses immédiates"],
-              ["0 invention", "Prix & remises"],
-            ].map(([n, l]) => (
-              <div key={l} className="card p-6 text-center">
-                <div className="text-3xl font-semibold text-teal-300">{n}</div>
-                <div className="mt-1 text-sm text-slate-400">{l}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">Témoignages</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {[
-              ["Studio North", "On qualifie la nuit. Le matin, l'équipe ne reprend que les leads chauds."],
-              ["Atelier Lumen", "Les prix viennent du catalogue. Plus de mauvaises surprises en caisse."],
-              ["Harbor SaaS", "Le score de lead nous dit enfin qui rappeler en premier."],
-            ].map(([who, quote]) => (
-              <blockquote key={who} className="card p-6">
-                <p className="text-slate-300">“{quote}”</p>
-                <footer className="mt-4 text-sm text-slate-500">{who}</footer>
-              </blockquote>
-            ))}
+        <section id="security" className="mx-auto max-w-6xl px-4 py-16">
+          <div className="card p-8 md:p-10">
+            <h2>Vos données sont protégées.</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {["Chiffrement", "Isolation des entreprises", "Contrôle d'accès", "Protection API", "Audit logs"].map((s) => (
+                <div key={s} className="rounded-2xl bg-[var(--bg-soft)] p-4 text-sm font-medium">
+                  {s}
+                </div>
+              ))}
+            </div>
+            <Link href="/security" className="btn btn-ghost mt-6">
+              Découvrir notre sécurité
+            </Link>
           </div>
         </section>
 
         <section id="pricing" className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">Tarifs</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
-            {[
-              ["Free", "$0", "50 conversations · 1 agent · 10 produits"],
-              ["Starter", "$9", "500 conversations · catalogue · commandes"],
-              ["Business", "$29", "5 000 conversations · automations · analytics"],
-              ["Pro", "$79", "Volume élevé · équipe · API · priorité"],
-            ].map(([n, p, d]) => (
-              <div key={n} className="card p-6">
-                <div className="text-sm text-slate-400">{n}</div>
-                <div className="mt-2 text-3xl font-semibold">{p}<span className="text-sm text-slate-500">/mois</span></div>
-                <p className="mt-3 text-sm text-slate-400">{d}</p>
+          <h2>Tarifs clairs. Limites réelles.</h2>
+          <p className="mt-2 text-[var(--muted)]">Mensuel. L&apos;annuel est disponible au checkout (2 mois offerts si Stripe est configuré).</p>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {displayPlans.map((p) => (
+              <div key={p.slug} className={`card p-6 ${p.slug === "business" ? "ring-2 ring-[var(--primary)]" : ""}`}>
+                <div className="text-sm text-[var(--muted)]">{p.name}</div>
+                <div className="mt-2 text-3xl font-semibold">
+                  ${p.priceMonthly}
+                  <span className="text-sm font-normal text-[var(--muted)]"> / mois</span>
+                </div>
+                <div className="mt-1 text-xs text-[var(--muted)]">${p.priceMonthly * 10} / an</div>
+                <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+                  {p.features.map((f) => (
+                    <li key={f}>• {f}</li>
+                  ))}
+                </ul>
                 <Link href="/register" className="btn btn-primary mt-6 w-full">
-                  Start Free
+                  Commencer gratuitement
                 </Link>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold">FAQ</h2>
+        <section id="faq" className="mx-auto max-w-6xl px-4 py-16">
+          <h2>FAQ</h2>
           <div className="mt-8 space-y-3">
             {faqs.map(([q, a]) => (
               <details key={q} className="card p-5">
                 <summary className="cursor-pointer font-medium">{q}</summary>
-                <p className="mt-2 text-sm text-slate-400">{a}</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{a}</p>
               </details>
             ))}
           </div>
         </section>
 
-        <section id="security" className="mx-auto max-w-6xl px-4 py-16">
-          <div className="card p-8">
-            <h2 className="text-2xl font-semibold">Sécurité & conformité</h2>
-            <p className="mt-3 max-w-3xl text-slate-400">
-              Isolation multi-tenant, mots de passe hashés, secrets uniquement serveur, rate limiting, audit logs, webhooks
-              signés, export et suppression RGPD. Les clés API ne sont jamais exposées au frontend.
-            </p>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-4 pb-24">
-          <div className="card grid gap-6 p-10 text-center md:p-14">
-            <h2 className="text-3xl font-semibold">Créez votre commercial IA en 3 minutes.</h2>
-            <p className="text-slate-400">Aucun canal externe requis pour commencer. Testez, puis connectez.</p>
-            <div>
-              <Link href="/register" className="btn btn-primary">
-                Commencer gratuitement
-              </Link>
-            </div>
+        <section className="mx-auto max-w-6xl px-4 pb-20">
+          <div className="card p-10 text-center">
+            <h2>Créez votre commercial IA en 3 minutes.</h2>
+            <p className="mt-2 text-[var(--muted)]">Aucun canal externe requis pour commencer.</p>
+            <Link href="/register" className="btn btn-primary mt-6">
+              Commencer gratuitement
+            </Link>
           </div>
         </section>
       </main>
       <MarketingFooter />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "AI Sales Agent",
-            applicationCategory: "BusinessApplication",
-            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-            description: "AI sales engine that turns conversations into qualified leads and sales.",
-          }),
-        }}
-      />
+    </div>
+  );
+}
+
+function DemoConversation({ extended = false }: { extended?: boolean }) {
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3">
+        <div className="font-medium">Sarah · Demo Store</div>
+        <Badge tone="ai">IA</Badge>
+      </div>
+      <div className="space-y-3 p-4 text-sm">
+        <Bubble who="client">Bonjour, combien coûte ce produit ?</Bubble>
+        <Bubble who="ai">Bonjour. Le Premium T-Shirt est à 25 $ (prix catalogue). Voulez-vous que je vous aide à passer commande ?</Bubble>
+        {extended ? (
+          <>
+            <Bubble who="client">Oui.</Bubble>
+            <Bubble who="ai">Parfait. Quelle quantité souhaitez-vous ?</Bubble>
+            <div className="rounded-xl bg-[var(--ok-bg)] px-3 py-2 text-[var(--ok)]">Commande créée ✓ — paiement non débité (démo visuelle)</div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function Bubble({ who, children }: { who: "client" | "ai"; children: React.ReactNode }) {
+  const mine = who === "client";
+  return (
+    <div className={`max-w-[88%] rounded-2xl px-3 py-2 ${mine ? "ml-auto bg-[var(--bg-soft)]" : "bg-[color-mix(in_srgb,var(--ai)_10%,var(--bg-elev))]"}`}>
+      {!mine ? <span className="ai-chip mb-1">IA</span> : null}
+      <div>{children}</div>
     </div>
   );
 }

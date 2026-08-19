@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Field } from "@/components/ui";
+import { Field, Alert } from "@/components/ui";
+import { Logo } from "@/components/logo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,36 +32,39 @@ export default function RegisterPage() {
       setError(data.error || "Inscription impossible.");
       return;
     }
-    router.push(`/verify-email?next=1${data.demoVerifyPath ? `&token=${new URL(data.demoVerifyPath, "http://x").searchParams.get("token")}` : ""}`);
+    const token = data.demoVerifyPath ? new URL(data.demoVerifyPath, "http://x").searchParams.get("token") : "";
+    router.push(`/verify-email?next=1${token ? `&token=${token}` : ""}`);
   }
 
   return (
     <div className="grid-bg flex min-h-screen items-center justify-center px-4">
       <form onSubmit={onSubmit} className="card w-full max-w-md space-y-4 p-8">
-        <div>
-          <div className="text-sm text-teal-300">Start Free</div>
-          <h1 className="mt-1 text-2xl font-semibold">Créer un compte</h1>
-          <p className="mt-1 text-sm text-slate-400">Peu d&apos;informations. Votre agent en quelques minutes.</p>
-        </div>
+        <Logo />
+        <h1 className="text-2xl">Commencer gratuitement</h1>
+        <p className="text-sm text-[var(--muted)]">Votre agent en quelques minutes.</p>
         <Field label="Nom">
-          <input name="name" required placeholder="Maya Chen" />
+          <input name="name" required autoComplete="name" />
         </Field>
         <Field label="Email">
-          <input name="email" type="email" required />
+          <input name="email" type="email" required autoComplete="email" />
         </Field>
         <Field label="Mot de passe (8+ caractères)">
-          <input name="password" type="password" minLength={8} required />
+          <input name="password" type="password" minLength={8} required autoComplete="new-password" />
         </Field>
-        <label className="flex items-center gap-2 text-sm text-slate-400">
+        <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
           <input name="marketing" type="checkbox" className="h-4 w-4" />
-          J&apos;accepte de recevoir des emails produit (opt-in)
+          Recevoir des emails produit (opt-in)
         </label>
-        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+        {error ? (
+          <Alert tone="danger" title="Inscription impossible">
+            {error}
+          </Alert>
+        ) : null}
         <button className="btn btn-primary w-full" disabled={loading}>
           {loading ? "Création…" : "Créer mon espace"}
         </button>
-        <p className="text-sm text-slate-400">
-          Déjà un compte ? <Link href="/login">Connexion</Link>
+        <p className="text-sm text-[var(--muted)]">
+          Déjà un compte ? <Link href="/login">Se connecter</Link>
         </p>
       </form>
     </div>

@@ -65,7 +65,7 @@ export default function ProductsPage() {
             Exporter
           </a>
           <button className="btn btn-primary" onClick={() => setOpen(true)}>
-            + Ajouter mon premier produit
+            Créer mon catalogue
           </button>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function ProductsPage() {
                   <div className="font-medium">
                     {p.name} {p.isDemo ? <span className="demo-ribbon">DEMO</span> : null}
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-[var(--muted)]">
                     {p.sku} · stock {p.stock}
                   </div>
                 </div>

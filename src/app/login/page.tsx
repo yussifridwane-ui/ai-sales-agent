@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Field } from "@/components/ui";
+import { Field, Alert } from "@/components/ui";
+import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,29 +33,33 @@ export default function LoginPage() {
 
   return (
     <div className="grid-bg flex min-h-screen items-center justify-center px-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <form onSubmit={onSubmit} className="card w-full max-w-md space-y-4 p-8">
-        <div>
-          <div className="text-sm text-teal-300">AI Sales Agent</div>
-          <h1 className="mt-1 text-2xl font-semibold">Connexion</h1>
-        </div>
+        <Logo />
+        <h1 className="text-2xl">Se connecter</h1>
         <Field label="Email">
-          <input name="email" type="email" required placeholder="vous@entreprise.com" />
+          <input name="email" type="email" required autoComplete="email" placeholder="vous@entreprise.com" />
         </Field>
         <Field label="Mot de passe">
-          <input name="password" type="password" required />
+          <input name="password" type="password" required autoComplete="current-password" />
         </Field>
-        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+        {error ? (
+          <Alert tone="danger" title="Connexion impossible">
+            {error}
+          </Alert>
+        ) : null}
         <button className="btn btn-primary w-full" disabled={loading}>
           {loading ? "Connexion…" : "Se connecter"}
         </button>
-        <div className="flex justify-between text-sm text-slate-400">
+        <div className="flex justify-between text-sm text-[var(--muted)]">
           <Link href="/forgot-password">Mot de passe oublié</Link>
           <Link href="/register">Créer un compte</Link>
         </div>
-        <p className="text-xs text-slate-500">
-          Démo : xena.w@example.org / Demo123! · Admin : nina.v@example.com / Admin123!
+        <p className="text-xs text-[var(--muted)]">
+          Démo : xena.w@example.org / Demo123!
         </p>
-        <p className="text-xs text-slate-600">Google, Apple, Microsoft : prévu (non connecté).</p>
       </form>
     </div>
   );

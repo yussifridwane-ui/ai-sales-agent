@@ -10,23 +10,24 @@ export default function PricingPage() {
     <div className="grid-bg min-h-screen">
       <MarketingNav />
       <main className="mx-auto max-w-6xl px-4 py-16">
-        <h1 className="text-4xl font-semibold">Des plans clairs. Des limites réelles.</h1>
-        <p className="mt-3 text-slate-400">Les quotas sont appliqués côté serveur. L&apos;upgrade est proposé à la limite.</p>
-        <div className="mt-10 grid gap-4 md:grid-cols-4">
+        <h1>Des plans clairs. Des limites réelles.</h1>
+        <p className="mt-3 text-[var(--muted)]">Les quotas sont appliqués côté serveur.</p>
+        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((p) => (
             <div key={p.slug} className="card p-6">
-              <div className="text-sm text-slate-400">{p.name}</div>
+              <div className="text-sm text-[var(--muted)]">{p.name}</div>
               <div className="mt-2 text-3xl font-semibold">
                 ${p.priceMonthly}
-                <span className="text-sm text-slate-500">/mois</span>
+                <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
               </div>
-              <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <div className="text-xs text-[var(--muted)]">${p.priceMonthly * 10}/an</div>
+              <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
                 {p.features.map((f) => (
                   <li key={f}>• {f}</li>
                 ))}
               </ul>
               <Link href="/register" className="btn btn-primary mt-6 w-full">
-                Choisir {p.name}
+                Commencer gratuitement
               </Link>
             </div>
           ))}

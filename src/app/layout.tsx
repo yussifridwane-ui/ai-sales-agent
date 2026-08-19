@@ -4,37 +4,39 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
   title: {
-    default: "AI Sales Agent — Votre commercial IA travaille 24h/24",
+    default: "AI Sales Agent — Transformez vos conversations en ventes",
     template: "%s · AI Sales Agent",
   },
   description:
-    "Transformez automatiquement vos conversations en prospects qualifiés et en ventes. Agent commercial IA pour WhatsApp, Instagram, site web et email.",
+    "AI Sales Agent répond à vos clients, recommande vos produits, qualifie les prospects et transforme les conversations en commandes — 24h/24.",
   keywords: [
     "AI sales agent",
     "AI sales assistant",
-    "AI customer service",
     "WhatsApp sales automation",
     "Instagram sales automation",
     "AI ecommerce assistant",
-    "AI chatbot for business",
   ],
+  icons: { icon: "/icon.svg" },
   openGraph: {
-    title: "AI Sales Agent — Votre commercial IA travaille 24h/24",
+    title: "AI Sales Agent — Transformez vos conversations en ventes",
     description: "Conversation → qualification → recommandation → commande → paiement → suivi.",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "AI Sales Agent",
-    description: "Votre commercial IA travaille 24h/24.",
-  },
-  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="fr" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://rsms.me/" />
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{const m=localStorage.getItem("ais-theme")||"system";const d=m==="dark"||(m==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { EmptyState } from "@/components/ui";
+import { Badge, EmptyState } from "@/components/ui";
 
 type Order = {
   id: string;
@@ -33,21 +33,22 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-2">
           {orders.map((o) => (
-            <Link key={o.id} href={`/app/orders/${o.id}`} className="card flex items-center justify-between p-4">
+            <Link key={o.id} href={`/app/orders/${o.id}`} className="card flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="font-medium">
                   {o.number} {o.isDemo ? <span className="demo-ribbon">DEMO</span> : null}
                 </div>
-                <div className="text-sm text-slate-400">
+                <div className="text-sm text-[var(--muted)]">
                   {o.customer} · {o.channel} {o.attributedToAi ? "· IA" : ""}
                 </div>
               </div>
-              <div className="text-right text-sm">
-                <div>
+              <div className="text-sm sm:text-right">
+                <div className="font-semibold">
                   {o.total} {o.currency}
                 </div>
-                <div className="text-slate-400">
-                  {o.status} · {o.paymentStatus}
+                <div className="mt-1 flex flex-wrap gap-1 sm:justify-end">
+                  <Badge tone={o.paymentStatus === "paid" ? "ok" : "warn"}>{o.paymentStatus}</Badge>
+                  <Badge>{o.status}</Badge>
                 </div>
               </div>
             </Link>

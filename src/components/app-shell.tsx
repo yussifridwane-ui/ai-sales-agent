@@ -2,22 +2,27 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Logo } from "./logo";
+import { ThemeToggle } from "./theme";
 
-const nav = [
-  { href: "/app/dashboard", label: "Dashboard" },
+const primary = [
+  { href: "/app/dashboard", label: "Overview" },
   { href: "/app/conversations", label: "Conversations" },
   { href: "/app/leads", label: "Leads" },
-  { href: "/app/orders", label: "Orders" },
-  { href: "/app/products", label: "Products" },
-  { href: "/app/agents", label: "Agent" },
-  { href: "/app/knowledge", label: "Knowledge" },
-  { href: "/app/automations", label: "Automations" },
+  { href: "/app/orders", label: "Commandes" },
+  { href: "/app/products", label: "Produits" },
+];
+
+const more = [
+  { href: "/app/agents", label: "AI Agent" },
+  { href: "/app/knowledge", label: "Connaissances" },
+  { href: "/app/automations", label: "Automatisations" },
   { href: "/app/analytics", label: "Analytics" },
   { href: "/app/insights", label: "Insights" },
   { href: "/app/integrations", label: "Integrations" },
   { href: "/app/billing", label: "Billing" },
-  { href: "/app/team", label: "Team" },
+  { href: "/app/team", label: "Équipe" },
   { href: "/app/settings", label: "Settings" },
 ];
 
@@ -34,60 +39,78 @@ export function AppShell({
 }) {
   const path = usePathname();
   const router = useRouter();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   }
 
+  const all = [...primary, ...more];
+
   return (
-    <div className="min-h-screen bg-[#07090f] text-slate-100">
-      <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-white/5 bg-[#0b1018] p-4 md:block">
-        <Link href="/app/dashboard" className="flex items-center gap-2 font-semibold">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-teal-400 text-sm text-teal-950">AI</span>
-          Sales Agent
-        </Link>
-        <div className="mt-4 text-xs text-slate-500">{orgName}</div>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
+      <aside className="fixed inset-y-0 left-0 hidden w-[var(--sidebar)] border-r border-[var(--line)] bg-[var(--bg-elev)] p-4 lg:block">
+        <Logo href="/app/dashboard" />
+        <div className="mt-3 text-xs text-[var(--muted)]">{orgName}</div>
         {isDemo ? <div className="demo-ribbon mt-2">DEMO</div> : null}
-        <nav className="mt-6 space-y-1 text-sm">
-          {nav.map((n) => {
+        <nav className="mt-6 space-y-1 text-sm" aria-label="Application">
+          {all.map((n) => {
             const active = path === n.href || path.startsWith(n.href + "/");
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`block rounded-xl px-3 py-2 ${active ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5"}`}
+                className={`block rounded-xl px-3 py-2 ${active ? "bg-[var(--bg-soft)] font-medium" : "text-[var(--muted)] hover:bg-[var(--bg-soft)]"}`}
               >
                 {n.label}
               </Link>
             );
           })}
           {isAdmin ? (
-            <Link href="/admin" className="mt-4 block rounded-xl px-3 py-2 text-amber-200 hover:bg-white/5">
+            <Link href="/admin" className="mt-3 block rounded-xl px-3 py-2 text-[var(--warn)]">
               Admin
             </Link>
           ) : null}
         </nav>
-        <button onClick={logout} className="mt-8 text-sm text-slate-500">
-          Déconnexion
-        </button>
+        <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <ThemeToggle />
+          <button onClick={logout} className="btn btn-ghost w-full text-sm">
+            Déconnexion
+          </button>
+        </div>
       </aside>
 
-      <div className="md:pl-60">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-[#07090f]/80 px-4 py-3 backdrop-blur md:hidden">
-          <span className="font-semibold">AI Sales Agent</span>
-          <button onClick={logout} className="text-sm text-slate-400">
-            Sortir
-          </button>
+      <div className="lg:pl-[var(--sidebar)]">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] px-4 py-3 backdrop-blur lg:hidden">
+          <Logo compact href="/app/dashboard" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button onClick={logout} className="text-sm text-[var(--muted)]">
+              Sortir
+            </button>
+          </div>
         </header>
-        <main className="px-4 py-6 pb-24 md:px-8">{children}</main>
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-white/10 bg-[#0b1018]/95 text-[11px] md:hidden">
-          {nav.slice(0, 5).map((n) => (
-            <Link key={n.href} href={n.href} className="py-3 text-center text-slate-300">
-              {n.label}
+        <main className="px-4 py-6 pb-28 lg:px-8">{children}</main>
+        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-[var(--line)] bg-[var(--bg-elev)] text-[11px] lg:hidden" aria-label="Mobile">
+          {primary.map((n) => (
+            <Link key={n.href} href={n.href} className="min-h-12 py-3 text-center text-[var(--muted)]">
+              {n.label.split(" ")[0]}
             </Link>
           ))}
+          <button className="min-h-12 py-3 text-[var(--muted)]" onClick={() => setMoreOpen((v) => !v)}>
+            Plus
+          </button>
         </nav>
+        {moreOpen ? (
+          <div className="fixed inset-x-0 bottom-14 z-30 mx-3 mb-2 rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)] p-3 shadow-[var(--shadow)] lg:hidden">
+            {more.map((n) => (
+              <Link key={n.href} href={n.href} className="block rounded-xl px-3 py-2" onClick={() => setMoreOpen(false)}>
+                {n.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );

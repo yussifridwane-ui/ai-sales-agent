@@ -64,13 +64,13 @@ export default function ConversationDetail() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
       <div className="card flex h-[70vh] flex-col">
-        <div className="flex items-center justify-between border-b border-white/5 p-4">
+        <div className="flex items-center justify-between border-b border-[var(--line)] p-4">
           <div>
             <div className="font-medium">
               {data.lead?.firstName || "Visiteur"} · {c.channel}
               {c.isDemo ? <span className="demo-ribbon ml-2">DEMO</span> : null}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-[var(--muted)]">
               Lead Score : {c.leadScore}/100 · {data.score?.fr} · {c.intent || "—"}
             </div>
           </div>
@@ -86,13 +86,13 @@ export default function ConversationDetail() {
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {data.messages.map((m) => (
-            <div key={m.id} className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === "customer" ? "ml-auto bg-teal-400/15" : "bg-white/5"}`}>
+            <div key={m.id} className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === "customer" ? "ml-auto bg-[var(--bg-soft)]" : "bg-[color-mix(in_srgb,var(--ai)_10%,var(--bg-elev))]"}`}>
               <div className="whitespace-pre-wrap">{m.content}</div>
-              {m.generatedByAi ? <div className="mt-1 text-[10px] uppercase tracking-wide text-teal-300">IA</div> : null}
+              {m.generatedByAi ? <div className="ai-chip mt-1">IA</div> : null}
             </div>
           ))}
         </div>
-        <div className="flex gap-2 border-t border-white/5 p-3">
+        <div className="flex gap-2 border-t border-[var(--line)] p-3">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire au nom du client…" onKeyDown={(e) => e.key === "Enter" && send(false)} />
           <button className="btn btn-primary" onClick={() => send(false)}>
             Envoyer
