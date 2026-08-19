@@ -63,6 +63,7 @@ export function MarketingFooter() {
         <div>
           <Logo />
           <p className="mt-3 max-w-xs">Votre commercial IA travaille 24h/24.</p>
+          <p className="mt-2 text-xs">ventesonline.tg</p>
         </div>
         <div className="space-y-2">
           <div className="font-medium text-[var(--ink)]">Produit</div>
@@ -93,8 +94,8 @@ export function MarketingFooter() {
           <Link href="/#faq" className="block">
             FAQ
           </Link>
-          <a href="mailto:support@example.com" className="block">
-            Support
+          <a href="mailto:olivia.t@example.org" className="block">
+            olivia.t@example.org
           </a>
         </div>
       </div>

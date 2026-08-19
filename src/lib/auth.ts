@@ -7,6 +7,7 @@ import { log } from "./logger";
 import { sendEmail } from "./email";
 import { assertNotLocked, findUserByEmail, onLoginFailure, onLoginSuccess } from "./security/brute-force";
 import { audit } from "./audit";
+import { publicOrigin } from "./domains";
 
 export const SESSION_COOKIE = "ais_session";
 const SESSION_DAYS = 14;
@@ -110,13 +111,12 @@ export async function registerUser(input: {
     token,
     expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
   });
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+  const verifyUrl = `${publicOrigin()}/verify-email?token=${token}`;
   await sendEmail({
     to: email,
-    subject: "Vérifiez votre email — AI Sales Agent",
+    subject: "Vérifiez votre email — VentesOnline",
     text: `Bienvenue. Vérifiez votre email : ${verifyUrl}`,
-    html: `<p>Bienvenue sur AI Sales Agent.</p><p><a href="${verifyUrl}">Vérifier mon email</a></p>`,
+    html: `<p>Bienvenue sur VentesOnline (AI Sales Agent).</p><p><a href="${verifyUrl}">Vérifier mon email</a></p>`,
   });
   log("SECURITY", "user_registered", { userId });
   const user = findOne<User>("users", { id: userId })!;
@@ -168,8 +168,7 @@ export async function requestPasswordReset(email: string) {
     token,
     expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
   });
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const url = `${appUrl}/reset-password?token=${token}`;
+  const url = `${publicOrigin()}/reset-password?token=${token}`;
   await sendEmail({
     to: user.email,
     subject: "Réinitialisation du mot de passe",

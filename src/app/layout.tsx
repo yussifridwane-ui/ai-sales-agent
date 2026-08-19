@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { marketingOrigin } from "@/lib/domains";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(marketingOrigin()),
   title: {
     default: "AI Sales Agent — Transformez vos conversations en ventes",
     template: "%s · AI Sales Agent",

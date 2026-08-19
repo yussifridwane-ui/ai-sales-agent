@@ -37,7 +37,7 @@ export default function HomePage() {
                   Voir comment ça marche
                 </a>
               </div>
-              <p className="mt-3 text-xs text-[var(--muted)]">Plan Free inclus · Carte non requise · Isolation multi-tenant</p>
+              <p className="mt-3 text-xs text-[var(--muted)]">ventesonline.tg · Plan Free · Isolation multi-tenant</p>
             </div>
             <DemoConversation />
           </div>

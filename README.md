@@ -44,9 +44,20 @@ npm test
 
 Couvre notamment l'isolation multi-tenant : l'entreprise A ne voit pas les produits / conversations de B.
 
+## Domaines (Togo)
+
+Comme [santeonline.tg](https://santeonline.tg) : **ventesonline.tg**
+
+- Site : `https://ventesonline.tg`
+- App : `https://app.ventesonline.tg`
+- Admin : `https://admin.ventesonline.tg`
+
+Détail DNS et enregistrement .tg : voir [DOMAINS.md](./DOMAINS.md).
+
 ## Production
 
-1. Pointer `DATABASE_URL` / migrer le schéma SQL vers PostgreSQL.
-2. Définir `AUTH_SECRET` et `CREDENTIALS_ENCRYPTION_KEY`.
-3. Configurer `AI_API_KEY`, `STRIPE_SECRET_KEY`, WhatsApp Cloud API selon les besoins.
-4. `npm run build && npm start`.
+1. Enregistrer `ventesonline.tg` puis pointer le DNS.
+2. PostgreSQL + secrets (`AUTH_SECRET`, `CREDENTIALS_ENCRYPTION_KEY`).
+3. `APP_URL=https://app.ventesonline.tg`
+4. Stripe / SMTP / MFA admin.
+5. `npm run build && npm start`.

@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { NextRequest } from "next/server";
+import { DOMAINS } from "../domains";
 
 export function newRequestId() {
   return randomBytes(8).toString("hex");
@@ -15,7 +16,8 @@ export function allowedOrigins() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  return [app, ...extras].filter(Boolean);
+  const official = Object.values(DOMAINS).map((h) => `https://${h}`);
+  return [app, ...extras, ...official].filter(Boolean);
 }
 
 export function originAllowed(req: NextRequest) {
